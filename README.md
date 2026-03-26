@@ -70,7 +70,7 @@ Run this command from your terminal:
 docker exec -t cv_postgres_db pg_dump -U postgres -d cvdb -F c -f /tmp/cvdb.dump
 docker cp cv_postgres_db:/tmp/cvdb.dump ./cvdb.dump
 ```
-*(This creates a binary dump file named `cvdb.dump` in your current directory. It is ignored by Git due to its size).*
+*(This creates a binary dump file named `cvdb.dump` in your current directory, which is committed to the repository for portability).*
 
 You can then use `pg_restore` to push this dump to your managed database provider (e.g. Render).
 
