@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- NCP (Sharad Pawar) - Trumpet/Tutari -->
+  <circle cx="32" cy="32" r="30" fill="#6366F1" opacity="0.12"/>
+  <!-- Trumpet body -->
+  <path d="M12 30 L38 26 C42 24, 48 22, 52 18 L52 46 C48 42, 42 40, 38 38 L12 34 Z" fill="#6366F1"/>
+  <!-- Trumpet bell -->
+  <path d="M52 18 C56 16, 58 14, 58 12 L58 52 C58 50, 56 48, 52 46Z" fill="#6366F1" opacity="0.8"/>
+  <!-- Mouthpiece -->
+  <circle cx="12" cy="32" r="4" fill="#6366F1"/>
+  <circle cx="12" cy="32" r="2" fill="white"/>
+  <!-- Sound waves -->
+  <path d="M54 24 C58 28, 58 36, 54 40" stroke="#6366F1" stroke-width="1.5" fill="none" opacity="0.5"/>
+  <path d="M56 20 C62 26, 62 38, 56 44" stroke="#6366F1" stroke-width="1.5" fill="none" opacity="0.3"/>
+</svg>

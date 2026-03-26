@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- BJP Lotus -->
+  <circle cx="32" cy="32" r="30" fill="#FF9933" opacity="0.12"/>
+  <!-- Center petal -->
+  <path d="M32 8 C34 18, 38 22, 32 30 C26 22, 30 18, 32 8Z" fill="#FF9933"/>
+  <!-- Left petals -->
+  <path d="M20 14 C24 22, 26 26, 28 32 C20 28, 18 22, 20 14Z" fill="#FF9933" opacity="0.85"/>
+  <path d="M12 24 C18 28, 22 30, 26 34 C18 34, 14 30, 12 24Z" fill="#FF9933" opacity="0.7"/>
+  <!-- Right petals -->
+  <path d="M44 14 C40 22, 38 26, 36 32 C44 28, 46 22, 44 14Z" fill="#FF9933" opacity="0.85"/>
+  <path d="M52 24 C46 28, 42 30, 38 34 C46 34, 50 30, 52 24Z" fill="#FF9933" opacity="0.7"/>
+  <!-- Base -->
+  <ellipse cx="32" cy="36" rx="10" ry="4" fill="#FF9933" opacity="0.5"/>
+  <!-- Stem -->
+  <path d="M32 38 L32 52" stroke="#138808" stroke-width="3" stroke-linecap="round"/>
+  <!-- Leaves -->
+  <path d="M32 46 C26 42, 22 44, 20 46" stroke="#138808" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M32 44 C38 40, 42 42, 44 44" stroke="#138808" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

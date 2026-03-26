@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- DMK - Rising Sun -->
+  <circle cx="32" cy="32" r="30" fill="#B91C1C" opacity="0.12"/>
+  <!-- Horizon line -->
+  <line x1="6" y1="40" x2="58" y2="40" stroke="#B91C1C" stroke-width="2"/>
+  <!-- Sun -->
+  <circle cx="32" cy="40" r="12" fill="#B91C1C"/>
+  <!-- Rays -->
+  <line x1="32" y1="22" x2="32" y2="14" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="42" y1="26" x2="48" y2="20" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="22" y1="26" x2="16" y2="20" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="48" y1="34" x2="54" y2="32" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="16" y1="34" x2="10" y2="32" stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Below horizon - water/ground -->
+  <rect x="6" y="40" width="52" height="18" rx="2" fill="#B91C1C" opacity="0.15"/>
+</svg>

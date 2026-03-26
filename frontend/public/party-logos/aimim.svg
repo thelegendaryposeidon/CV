@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- AIMIM - Kite symbol -->
+  <circle cx="32" cy="32" r="30" fill="#10B981" opacity="0.12"/>
+  <!-- Kite shape -->
+  <polygon points="32,8 48,32 32,50 16,32" fill="#10B981" stroke="#10B981" stroke-width="1"/>
+  <!-- Kite cross -->
+  <line x1="32" y1="8" x2="32" y2="50" stroke="white" stroke-width="1.5" opacity="0.6"/>
+  <line x1="16" y1="32" x2="48" y2="32" stroke="white" stroke-width="1.5" opacity="0.6"/>
+  <!-- Kite tail -->
+  <path d="M32 50 C28 54, 34 56, 30 60" stroke="#10B981" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

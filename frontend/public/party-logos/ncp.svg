@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- NCP (Ajit Pawar) - Clock symbol -->
+  <circle cx="32" cy="32" r="30" fill="#06B6D4" opacity="0.12"/>
+  <!-- Clock face -->
+  <circle cx="32" cy="32" r="22" stroke="#06B6D4" stroke-width="3" fill="white"/>
+  <circle cx="32" cy="32" r="20" stroke="#06B6D4" stroke-width="1" fill="none"/>
+  <!-- Hour marks -->
+  <line x1="32" y1="14" x2="32" y2="18" stroke="#06B6D4" stroke-width="2"/>
+  <line x1="32" y1="46" x2="32" y2="50" stroke="#06B6D4" stroke-width="2"/>
+  <line x1="14" y1="32" x2="18" y2="32" stroke="#06B6D4" stroke-width="2"/>
+  <line x1="46" y1="32" x2="50" y2="32" stroke="#06B6D4" stroke-width="2"/>
+  <!-- Hour hand -->
+  <line x1="32" y1="32" x2="32" y2="20" stroke="#06B6D4" stroke-width="3" stroke-linecap="round"/>
+  <!-- Minute hand -->
+  <line x1="32" y1="32" x2="42" y2="24" stroke="#06B6D4" stroke-width="2" stroke-linecap="round"/>
+  <!-- Center dot -->
+  <circle cx="32" cy="32" r="2.5" fill="#06B6D4"/>
+</svg>

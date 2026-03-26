@@ -1,0 +1,29 @@
+# Python / Backend
+backend/venv/
+backend/__pycache__/
+*.pyc
+
+# Node / Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+*.log
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Maps Data (Large binary files, handle via specific storage or instructions)
+backend/maps_data/*.shp
+backend/maps_data/*.shx
+backend/maps_data/*.dbf
+backend/maps_data/*.prj
+
+# System
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Database dumps
+*.sql

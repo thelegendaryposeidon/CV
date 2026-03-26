@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Shiv Sena UBT - Flaming Torch (Mashaal) -->
+  <circle cx="32" cy="32" r="30" fill="#EF4444" opacity="0.12"/>
+  <!-- Torch handle -->
+  <rect x="29" y="30" width="6" height="24" rx="2" fill="#B45309"/>
+  <!-- Torch top plate -->
+  <rect x="26" y="28" width="12" height="4" rx="1" fill="#92400E"/>
+  <!-- Flame outer -->
+  <path d="M32 6 C38 14, 42 20, 38 28 L26 28 C22 20, 26 14, 32 6Z" fill="#EF4444"/>
+  <!-- Flame inner -->
+  <path d="M32 12 C36 18, 38 22, 36 28 L28 28 C26 22, 28 18, 32 12Z" fill="#F97316"/>
+  <!-- Flame core -->
+  <path d="M32 18 C34 22, 35 24, 34 28 L30 28 C29 24, 30 22, 32 18Z" fill="#FCD34D"/>
+</svg>

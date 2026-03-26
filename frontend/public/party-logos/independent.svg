@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Independent candidate -->
+  <circle cx="32" cy="32" r="30" fill="#64748B" opacity="0.12"/>
+  <!-- Person silhouette -->
+  <circle cx="32" cy="18" r="8" fill="#64748B"/>
+  <!-- Body -->
+  <path d="M18 52 C18 38, 22 32, 32 32 C42 32, 46 38, 46 52" fill="#64748B" opacity="0.9"/>
+  <!-- Star badge -->
+  <polygon points="32,38 34,42 38,42 35,45 36,49 32,47 28,49 29,45 26,42 30,42" fill="#FCD34D"/>
+</svg>

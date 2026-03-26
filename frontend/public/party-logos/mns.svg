@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- MNS - Railway Engine -->
+  <circle cx="32" cy="32" r="30" fill="#EC4899" opacity="0.12"/>
+  <!-- Engine body -->
+  <rect x="14" y="22" width="30" height="22" rx="3" fill="#EC4899"/>
+  <!-- Chimney -->
+  <rect x="18" y="14" width="6" height="10" rx="1" fill="#EC4899"/>
+  <rect x="16" y="12" width="10" height="4" rx="1" fill="#EC4899" opacity="0.8"/>
+  <!-- Smoke -->
+  <circle cx="21" cy="8" r="3" fill="#EC4899" opacity="0.3"/>
+  <circle cx="25" cy="6" r="2" fill="#EC4899" opacity="0.2"/>
+  <!-- Front -->
+  <rect x="44" y="26" width="8" height="14" rx="2" fill="#EC4899" opacity="0.8"/>
+  <!-- Wheels -->
+  <circle cx="22" cy="48" r="5" fill="#EC4899" stroke="white" stroke-width="1.5"/>
+  <circle cx="36" cy="48" r="5" fill="#EC4899" stroke="white" stroke-width="1.5"/>
+  <circle cx="22" cy="48" r="1.5" fill="white"/>
+  <circle cx="36" cy="48" r="1.5" fill="white"/>
+  <!-- Rail line -->
+  <line x1="8" y1="53" x2="56" y2="53" stroke="#EC4899" stroke-width="2" opacity="0.5"/>
+</svg>
