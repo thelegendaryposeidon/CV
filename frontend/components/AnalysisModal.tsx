@@ -1,5 +1,9 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell
+} from 'recharts';
 
 export default function AnalysisModal({ isOpen, onClose, data, isLoading }: any) {
   if (!isOpen) return null;
@@ -27,10 +31,82 @@ export default function AnalysisModal({ isOpen, onClose, data, isLoading }: any)
                 }`}>Verdict: {data.verdict}</span>
                </div>
                <p className="text-sm text-slate-600 italic bg-slate-50 p-3 rounded border">"{data.summary}"</p>
-               <div className="grid grid-cols-2 gap-2 text-xs">
+                 <div className="grid grid-cols-2 gap-2 text-xs">
                  <div><b className="text-red-500">RED FLAGS</b>{data.red_flags?.map((f:any, i:number)=><div key={i}>• {f}</div>)}</div>
                  <div><b className="text-green-500">GREEN FLAGS</b>{data.green_flags?.map((f:any, i:number)=><div key={i}>• {f}</div>)}</div>
                </div>
+
+               {data.candidate_stats && data.state_avg && (
+                 <div className="mt-4 pt-4 border-t border-slate-100">
+                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Statewide Comparison Baseline</h4>
+                   
+                   <div className="space-y-4">
+                     {/* Criminal Cases Comparison Chart */}
+                     <div>
+                       <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                         <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
+                         Criminal Cases Declared
+                       </h4>
+                       <div className="bg-slate-50/50 rounded-xl border border-slate-100 p-2">
+                         <ResponsiveContainer width="100%" height={100}>
+                           <BarChart 
+                             data={[
+                               { name: 'Candidate', value: data.candidate_stats.cases },
+                               { name: 'State Avg', value: data.state_avg.cases }
+                             ]} 
+                             layout="vertical"
+                             margin={{ top: 5, right: 20, left: 10, bottom: 5 }} 
+                           >
+                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                             <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                             <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} width={65} />
+                             <Tooltip 
+                               cursor={{ fill: 'rgba(244,63,94,0.06)' }} 
+                               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold' }} 
+                             />
+                             <Bar dataKey="value" name="Cases" radius={[0, 4, 4, 0]} barSize={20}>
+                               <Cell fill="#f43f5e" /> {/* Rose for candidate */}
+                               <Cell fill="#94a3b8" /> {/* Slate for average */}
+                             </Bar>
+                           </BarChart>
+                         </ResponsiveContainer>
+                       </div>
+                     </div>
+
+                     {/* Assets Comparison Chart */}
+                     <div>
+                       <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                         <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+                         Declared Assets (₹ Crore)
+                       </h4>
+                       <div className="bg-slate-50/50 rounded-xl border border-slate-100 p-2">
+                         <ResponsiveContainer width="100%" height={100}>
+                           <BarChart 
+                             data={[
+                               { name: 'Candidate', value: data.candidate_stats.assets_crore },
+                               { name: 'State Avg', value: data.state_avg.assets_crore }
+                             ]} 
+                             layout="vertical"
+                             margin={{ top: 5, right: 20, left: 10, bottom: 5 }} 
+                           >
+                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                             <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                             <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} width={65} />
+                             <Tooltip 
+                               cursor={{ fill: 'rgba(16,185,129,0.06)' }} 
+                               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold' }} 
+                             />
+                             <Bar dataKey="value" name="Assets (₹ Cr)" radius={[0, 4, 4, 0]} barSize={20}>
+                               <Cell fill="#10b981" /> {/* Emerald for candidate */}
+                               <Cell fill="#94a3b8" /> {/* Slate for average */}
+                             </Bar>
+                           </BarChart>
+                         </ResponsiveContainer>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
             </div>
           ) : <p className="text-red-500 text-center">Analysis Failed.</p>}
         </div>

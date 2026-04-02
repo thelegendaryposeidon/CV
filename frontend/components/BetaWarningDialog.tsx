@@ -6,9 +6,10 @@ interface BetaWarningDialogProps {
   isOpen: boolean;
   onAccept: () => void;
   onClose: () => void;
+  acceptText?: string;
 }
 
-export default function BetaWarningDialog({ isOpen, onAccept, onClose }: BetaWarningDialogProps) {
+export default function BetaWarningDialog({ isOpen, onAccept, onClose, acceptText = "Proceed to Map" }: BetaWarningDialogProps) {
   const [accepted, setAccepted] = useState(false);
 
   // Reset checkbox when dialog opens
@@ -120,7 +121,7 @@ export default function BetaWarningDialog({ isOpen, onAccept, onClose }: BetaWar
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              Proceed to Map
+              {acceptText}
             </button>
           </div>
         </div>

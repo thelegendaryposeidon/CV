@@ -3,14 +3,22 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine, text
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import re
-import google.generativeai as genai
+from google import genai
 import json
 
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "") 
+gemini_client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    try:
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Failed to init Gemini: {e}")
 
 try:
     from scraper import search_candidate
@@ -168,9 +176,34 @@ def get_vicinity(location: LocationRequest):
 
 @app.post("/api/analyze")
 def analyze_candidate(data: AnalysisRequest):
-    if GEMINI_API_KEY:
+    # Determine the numerical baseline averages for the state.
+    state_avg_cases = 0.0
+    state_avg_assets = 0.0
+    candidate_cases = 0
+    candidate_assets_crore = 0.0
+    
+    try:
         try:
-            model = genai.GenerativeModel('gemini-pro')
+            cases_str = ''.join(filter(str.isdigit, str(data.cases)))
+            candidate_cases = int(cases_str) if cases_str else 0
+        except:
+            candidate_cases = 0
+        candidate_assets_crore = parse_assets_crore(data.assets)
+        
+        with engine.connect() as conn:
+            avg_row = conn.execute(text("SELECT AVG(CAST(NULLIF(cases, '') AS NUMERIC)) AS avg_cases FROM candidates_winner")).mappings().fetchone()
+            state_avg_cases = round(float(avg_row["avg_cases"] or 0), 2)
+            
+            all_asset_rows = conn.execute(text("SELECT assets FROM candidates_winner")).scalars().fetchall()
+            all_assets_crore = [parse_assets_crore(a or "") for a in all_asset_rows]
+            state_avg_assets = round(sum(all_assets_crore) / len(all_assets_crore), 2) if all_assets_crore else 0
+    except Exception as e:
+        print(f"Stats Error inside analyze: {e}")
+
+    result_payload = None
+
+    if gemini_client:
+        try:
             prompt = f"""
             Act as a strict, neutral political analyst. 
             Analyze this Indian Politician based on their affidavit data:
@@ -179,32 +212,56 @@ def analyze_candidate(data: AnalysisRequest):
             Criminal Cases: {data.cases}
             Assets: {data.assets}
 
-            Output a JSON object ONLY (no markdown) with these keys:
+            Output a JSON object ONLY (no markdown or additional text) with these keys:
             - summary: A 2-sentence summary of their profile.
             - red_flags: List of 2 potential concerns (if any).
             - green_flags: List of 2 positive indicators.
             - verdict: One word ("Safe", "Caution", "Risky").
             """
-            response = model.generate_content(prompt)
-            clean_text = response.text.replace("```json", "").replace("```", "")
-            return json.loads(clean_text)
+            response = gemini_client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
+            clean_text = response.text.strip()
+            if clean_text.startswith("```json"):
+                clean_text = clean_text[7:]
+            elif clean_text.startswith("```"):
+                clean_text = clean_text[3:]
+            if clean_text.endswith("```"):
+                clean_text = clean_text[:-3]
+            clean_text = clean_text.strip()
+            
+            result_payload = json.loads(clean_text)
         except Exception as e:
-            print(f"AI Error: {e}")
+            print(f"Gemini AI Error: {e}")
     
-    verdict = "Safe"
-    cases_str = str(data.cases).lower()
-    if "0" not in cases_str and "no" not in cases_str: 
-        verdict = "Caution"
-        try:
-            if int(data.cases) > 5: verdict = "Risky"
-        except: pass
+    if not result_payload:
+        verdict = "Safe"
+        cases_str = str(data.cases).lower()
+        if "0" not in cases_str and "no" not in cases_str: 
+            verdict = "Caution"
+            try:
+                if int(data.cases) > 5: verdict = "Risky"
+            except: pass
 
-    return {
-        "summary": f"{data.name} is a prominent leader from {data.party} with declared assets of {data.assets}. Their legal record is a primary factor in this analysis.",
-        "red_flags": [f"{data.cases} Criminal Cases declared in affidavit", "High asset disparity compared to average"],
-        "green_flags": ["Active political engagement", "Publicly available affidavit data"],
-        "verdict": verdict
+        result_payload = {
+            "summary": f"{data.name} is a prominent leader from {data.party} with declared assets of {data.assets}. Their legal record is a primary factor in this analysis.",
+            "red_flags": [f"{data.cases} Criminal Cases declared in affidavit", "High asset disparity compared to average"],
+            "green_flags": ["Active political engagement", "Publicly available affidavit data"],
+            "verdict": verdict
+        }
+
+    # Inject the exact stats required for the comparative chart
+    result_payload["candidate_stats"] = {
+        "cases": candidate_cases,
+        "assets_crore": candidate_assets_crore
     }
+    result_payload["state_avg"] = {
+        "cases": state_avg_cases,
+        "assets_crore": state_avg_assets
+    }
+    
+    return result_payload
 
 # ---------------------------------------------------------------------------
 # GET /api/search-candidates?q=<name>
@@ -280,6 +337,100 @@ def parse_assets_crore(asset_str: str) -> float:
     if "lakh" in s:
         return round(val / 100.0, 2)  # convert lakhs → crore
     return val  # already crore
+
+# ---------------------------------------------------------------------------
+# GET /api/all-candidates
+# Returns all wards and their candidates (winners and aspirants).
+# ---------------------------------------------------------------------------
+@app.get("/api/all-candidates")
+def get_all_candidates():
+    """
+    Returns all candidates grouped by ward, with global and local averages for charting.
+    """
+    try:
+        with engine.connect() as conn:
+            # 1. Fetch all winners
+            winners = conn.execute(
+                text("SELECT ward, name, party, cases, assets, image FROM candidates_winner ORDER BY ward")
+            ).mappings().fetchall()
+
+            # 2. Fetch all aspirants
+            aspirants = conn.execute(
+                text("SELECT ward, name, party, cases, assets FROM candidates_aspiring WHERE ward != '__default__'")
+            ).mappings().fetchall()
+
+            # --- Global Averages ---
+            avg_row = conn.execute(
+                text("""
+                    SELECT
+                        COUNT(*) AS total,
+                        AVG(CAST(NULLIF(cases, '') AS NUMERIC)) AS avg_cases
+                    FROM candidates_winner
+                """)
+            ).mappings().fetchone()
+            total_wards = int(avg_row["total"] or 0)
+            avg_cases = round(float(avg_row["avg_cases"] or 0), 2)
+            all_assets_crore = [parse_assets_crore(w["assets"] or "") for w in winners]
+            avg_assets = round(sum(all_assets_crore) / len(all_assets_crore), 2) if all_assets_crore else 0
+
+            # Group aspirants by ward
+            aspirants_by_ward = {}
+            for row in aspirants:
+                w = row["ward"]
+                if w not in aspirants_by_ward:
+                    aspirants_by_ward[w] = []
+                aspirants_by_ward[w].append({
+                    "name": row["name"],
+                    "party": row["party"],
+                    "cases": int(row["cases"] or 0),
+                    "assets": row["assets"] or "",
+                    "assets_crore": parse_assets_crore(row["assets"] or ""),
+                    "is_winner": False
+                })
+
+            # Format the output
+            results = []
+            for w in winners:
+                ward_name = w["ward"]
+                ward_aspirants = aspirants_by_ward.get(ward_name, [])
+                
+                winner_cases = int(w["cases"] or 0)
+                winner_assets_crore = parse_assets_crore(w["assets"] or "")
+                
+                winner_data = {
+                    "name": w["name"],
+                    "party": w["party"],
+                    "cases": winner_cases,
+                    "assets": w["assets"] or "",
+                    "assets_crore": winner_assets_crore,
+                    "image": w["image"],
+                    "is_winner": True
+                }
+
+                all_local_cases = [winner_cases] + [c["cases"] for c in ward_aspirants]
+                all_local_assets = [winner_assets_crore] + [c["assets_crore"] for c in ward_aspirants]
+                local_avg_cases = round(sum(all_local_cases) / len(all_local_cases), 2) if all_local_cases else 0
+                local_avg_assets = round(sum(all_local_assets) / len(all_local_assets), 2) if all_local_assets else 0
+
+                results.append({
+                    "ward": ward_name,
+                    "winner": winner_data,
+                    "candidates": ward_aspirants,
+                    "ward_avg": {
+                        "cases": avg_cases,
+                        "assets_crore": avg_assets,
+                    },
+                    "local_ward_avg": {
+                        "cases": local_avg_cases,
+                        "assets_crore": local_avg_assets,
+                    },
+                    "all_wards_count": total_wards,
+                })
+
+            return results
+    except Exception as e:
+        print(f"❌ All Candidates Fetch Error: {e}")
+        return []
 
 # ---------------------------------------------------------------------------
 # GET /api/ward-stats?ward=<name>

@@ -3,7 +3,8 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 geopandas
-google-generativeai
+google-genai
 requests
 beautifulsoup4
-pydantic
+pydantic
+python-dotenv

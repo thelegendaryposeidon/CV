@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Map, ArrowRight, Search, ShieldAlert, FileText } from "lucide-react";
+import { Map, ArrowRight, Search, ShieldAlert, FileText, Users } from "lucide-react";
 import MapInterface from "@/components/MapInterface"; 
 import BetaWarningDialog from "@/components/BetaWarningDialog";
 
@@ -60,6 +60,13 @@ export default function Home() {
             <a href="/map" onClick={handleMapClick} className="hover:text-blue-600 transition-colors cursor-pointer">Live Map</a>
             
             <Link 
+              href="/directory" 
+              className="hover:text-blue-600 transition-colors"
+            >
+              Candidate Directory
+            </Link>
+            
+            <Link 
               href="https://myneta.info/" 
               target="_blank" 
               className="hover:text-blue-600 transition-colors"
@@ -104,6 +111,9 @@ export default function Home() {
             <a href="/map" onClick={handleMapClick} className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer">
               <Search size={20} /> Find My Constituency
             </a>
+            <Link href="/directory" className="w-full sm:w-auto px-8 py-4 bg-white text-blue-600 border-2 border-blue-600 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all shadow-xl hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer">
+              <Users size={20} /> View Candidate Directory
+            </Link>
           </div>
 
           <div className="relative mt-20 hidden md:block">

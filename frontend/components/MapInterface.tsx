@@ -4,7 +4,7 @@ import maplibregl from 'maplibre-gl';
 import axios from 'axios';
 import Link from 'next/link';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MapPin, ShieldAlert, Wallet, Building2, Sparkles, Search, X, ChevronDown, BarChart3, Users, User, Trophy } from 'lucide-react'; 
+import { MapPin, ShieldAlert, Wallet, Building2, Sparkles, Search, X, ChevronDown, BarChart3, Users, User, Trophy, Loader2, ChevronUp, Minus } from 'lucide-react'; 
 import AnalysisModal from './AnalysisModal'; 
 import WardComparisonChart from './WardComparisonChart';
 import { getPartyLogoUrl } from './partyLogos';
@@ -22,8 +22,10 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
   // Data States
   const [info, setInfo] = useState<any>(null);
   const [geoData, setGeoData] = useState<any>(null); 
+  const geoDataRef = useRef<any>(null);
   const [states, setStates] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState("MAHARASHTRA");
+  const [isMapFullyLoaded, setIsMapFullyLoaded] = useState(false);
 
   // Search States
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +44,9 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
   const [wardStats, setWardStats] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [isWardStatsLoading, setIsWardStatsLoading] = useState(false);
+
+  // Card UI States
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Cinematic Coordinates (Mumbai Center)
   const PREVIEW_COORDS = { lng: 72.8777, lat: 19.0760 }; 
@@ -65,6 +70,7 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
           const response = await axios.get(`${API_BASE}/api/shapes?state=${stateName}`);
           if (response.data && response.data.features) {
               setGeoData(response.data); 
+              geoDataRef.current = response.data;
               
               const source = map.current?.getSource('constituencies') as maplibregl.GeoJSONSource;
               if (source) {
@@ -119,7 +125,7 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
                           });
                       }
                   });
-                  map.current?.fitBounds(bounds, { padding: 50, duration: 2000 });
+                  map.current?.fitBounds(bounds, { padding: 50, duration: 2000, essential: true });
               }
           }
       } catch (e) { console.error("Failed to load map shapes:", e); }
@@ -178,19 +184,29 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
       setSuggestions([]);
       setIsSearchFocused(false);
 
-      const coordinates = feature.geometry.coordinates[0];
       const bounds = new maplibregl.LngLatBounds();
       
       if (feature.geometry.type === "Polygon") {
-         coordinates.forEach((coord: any) => bounds.extend(coord));
+         feature.geometry.coordinates[0].forEach((coord: any) => bounds.extend(coord));
       } else if (feature.geometry.type === "MultiPolygon") {
          feature.geometry.coordinates.forEach((poly: any) => {
              poly[0].forEach((coord: any) => bounds.extend(coord));
          });
       }
 
+      const isMobile = window.innerWidth < 768;
+      map.current?.fitBounds(bounds, {
+          padding: isMobile 
+              ? { top: 50, bottom: 350, left: 50, right: 50 } 
+              : { top: 50, bottom: 50, left: 450, right: 50 },
+          pitch: 50,
+          bearing: 10,
+          maxZoom: 14,
+          speed: 1.5,
+          essential: true
+      });
+
       const center = bounds.getCenter();
-      map.current?.flyTo({ center: center, zoom: 14, pitch: 50, bearing: 10, speed: 1.5 });
       setTimeout(() => fetchVicinityData(center.lat, center.lng), 1000);
   };
 
@@ -239,6 +255,7 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
   const fetchVicinityData = async (lat: number, lng: number) => {
       setInfo({ loading: true });
       setShowComparison(false);
+      setIsMinimized(false);
       try {
           const response = await axios.post(`${API_BASE}/api/vicinity`, { latitude: lat, longitude: lng });
           setInfo(response.data);
@@ -280,16 +297,60 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
 
     map.current.on('load', async () => {
         // Load Maharashtra by default for both
-        loadShapes("MAHARASHTRA");
+        await loadShapes("MAHARASHTRA");
+
+        if (map.current) {
+            // Add a buffer after the 'idle' event to ensure all peripheral vector/raster tiles
+            // have completed their sub-render cycles across the entire visible extent.
+            map.current.once('idle', () => {
+                setTimeout(() => setIsMapFullyLoaded(true), 1200);
+            });
+        } else {
+            setTimeout(() => setIsMapFullyLoaded(true), 1200);
+        }
+        
+        // Extended fallback to ensure it doesn't interrupt the 2000ms map zoom animation + tile loading
+        setTimeout(() => setIsMapFullyLoaded(true), 6000);
     });
 
     if (!isPreview) {
         map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
         
         map.current.on('click', async (e) => {
-            const { lng, lat } = e.lngLat;
-            map.current?.flyTo({ center: [lng, lat], zoom: 14, pitch: 50, speed: 1.5 });
-            setTimeout(() => fetchVicinityData(lat, lng), 300);
+            const features = map.current?.queryRenderedFeatures(e.point, { layers: ['constituency-fills'] });
+            
+            if (features && features.length > 0 && geoDataRef.current) {
+                const clickedName = features[0].properties.name;
+                const feature = geoDataRef.current.features.find((f: any) => f.properties.name === clickedName);
+                
+                if (feature) {
+                    const bounds = new maplibregl.LngLatBounds();
+                    if (feature.geometry.type === "Polygon") {
+                        feature.geometry.coordinates[0].forEach((coord: any) => bounds.extend(coord));
+                    } else if (feature.geometry.type === "MultiPolygon") {
+                        feature.geometry.coordinates.forEach((poly: any) => {
+                            poly[0].forEach((coord: any) => bounds.extend(coord));
+                        });
+                    }
+
+                    const isMobile = window.innerWidth < 768;
+                    map.current?.fitBounds(bounds, {
+                        padding: isMobile 
+                            ? { top: 50, bottom: 350, left: 50, right: 50 } 
+                            : { top: 50, bottom: 50, left: 450, right: 50 },
+                        pitch: 50, 
+                        maxZoom: 14,
+                        speed: 1.5,
+                        essential: true
+                    });
+                } else {
+                    map.current?.flyTo({ center: [e.lngLat.lng, e.lngLat.lat], zoom: 14, pitch: 50, speed: 1.5, essential: true });
+                }
+            } else {
+                map.current?.flyTo({ center: [e.lngLat.lng, e.lngLat.lat], zoom: 14, pitch: 50, speed: 1.5, essential: true });
+            }
+            
+            setTimeout(() => fetchVicinityData(e.lngLat.lat, e.lngLat.lng), 300);
         });
         
         map.current.on('mousemove', 'constituency-fills', (e) => {
@@ -307,8 +368,8 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
         });
     }
 
+    let frame = 0;
     if (isPreview) {
-        let frame = 0;
         const rotateCamera = () => {
             if (!map.current) return;
             const bearing = map.current.getBearing();
@@ -316,12 +377,42 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
             frame = requestAnimationFrame(rotateCamera);
         };
         rotateCamera();
-        return () => cancelAnimationFrame(frame);
     }
+
+    return () => {
+        if (frame) cancelAnimationFrame(frame);
+        if (map.current) {
+            map.current.remove();
+            map.current = null;
+        }
+    };
   }, [isPreview]);
 
-  const jumpToDemo = () => {
-      map.current?.flyTo({ center: [73.296, 19.296], zoom: 13.5, pitch: 60, speed: 1.2 });
+  const [isLocating, setIsLocating] = useState(false);
+
+  const locateUser = () => {
+      if (!navigator.geolocation) {
+          alert("Geolocation is not supported by your browser");
+          return;
+      }
+
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+          (position) => {
+              const { longitude, latitude } = position.coords;
+              map.current?.flyTo({ center: [longitude, latitude], zoom: 14, pitch: 50, speed: 1.5, essential: true });
+              setTimeout(() => {
+                  fetchVicinityData(latitude, longitude);
+                  setIsLocating(false);
+              }, 1000);
+          },
+          (error) => {
+              console.error("Error getting location:", error);
+              setIsLocating(false);
+              alert("Could not get your location. Please check your browser permissions.");
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
   };
 
   const getPartyColor = (party: string) => {
@@ -333,6 +424,28 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+      {/* INITIAL LOADING STATE OVERLAY */}
+      {!isPreview && (
+          <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 transition-all duration-700 ${isMapFullyLoaded ? 'opacity-0 pointer-events-none scale-105' : 'opacity-100 scale-100'}`}>
+              <div className="relative flex items-center justify-center mb-8">
+                  <div className="w-24 h-24 border-4 border-blue-100 rounded-full"></div>
+                  <div className="w-24 h-24 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute"></div>
+                  <MapPin className="text-blue-600 absolute animate-pulse" size={32} />
+              </div>
+              <h2 className="text-3xl font-black text-slate-800 tracking-tight">
+                  Candidate<span className="text-blue-600">Validate</span>
+              </h2>
+              <div className="flex flex-col items-center mt-4">
+                  <p className="text-sm font-bold text-slate-500 tracking-widest uppercase flex items-center gap-2">
+                       <Loader2 size={16} className="animate-spin text-blue-600" /> Serving Interface
+                  </p>
+                  <div className="w-48 h-1 bg-gray-200 rounded-full mt-3 overflow-hidden">
+                      <div className="h-full bg-blue-600 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                  </div>
+              </div>
+          </div>
+      )}
+
       <div ref={mapContainer} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 0 }} />
       
       {/* UI OVERLAY - ONLY RENDER IF NOT IN PREVIEW MODE */}
@@ -460,8 +573,13 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
                         )}
                     </div>
 
-                    <button onClick={jumpToDemo} className="bg-gray-900 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:bg-gray-800 transition-all flex items-center gap-2 shrink-0">
-                        <MapPin size={14} /> LOCATE ME
+                    <button 
+                        onClick={locateUser} 
+                        disabled={isLocating}
+                        className={`text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg transition-all flex items-center gap-2 shrink-0 ${isLocating ? 'bg-gray-700 cursor-not-allowed opacity-80' : 'bg-gray-900 hover:bg-gray-800'}`}
+                    >
+                        {isLocating ? <Loader2 size={14} className="animate-spin" /> : <MapPin size={14} />} 
+                        {isLocating ? 'LOCATING...' : 'LOCATE ME'}
                     </button>
                 </div>
             </div>
@@ -483,16 +601,31 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
                                 <p>{info.error}</p>
                             </div>
                         ) : (
-                            <div>
-                                <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-between items-center">
-                                    <div className="flex items-center gap-2 text-gray-500">
-                                        <Building2 size={16} />
-                                        <span className="text-xs font-bold uppercase tracking-wider">{info.mla_constituency}</span>
+                            <div className="flex flex-col h-full max-h-[80vh]">
+                                <div 
+                                    className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors"
+                                    onClick={() => setIsMinimized(!isMinimized)}
+                                >
+                                    <div className="flex items-center gap-2 text-gray-500 overflow-hidden">
+                                        <Building2 size={16} className="shrink-0" />
+                                        <span className="text-xs font-bold uppercase tracking-wider truncate">
+                                            {info.mla_constituency}
+                                            {isMinimized && <span className="ml-2 text-blue-600 capitalize tracking-normal hidden sm:inline">— {info.mla_candidate}</span>}
+                                        </span>
                                     </div>
-                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-bold">MLA</span>
+                                    <div className="flex items-center gap-3 shrink-0 ml-2">
+                                        <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-bold">MLA</span>
+                                        <button 
+                                            className="text-gray-400 hover:text-gray-700 transition-colors p-1"
+                                            onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
+                                            title={isMinimized ? "Maximize card" : "Minimize card"}
+                                        >
+                                            {isMinimized ? <ChevronUp size={16} /> : <Minus size={16} />}
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <div className={`p-6 border-l-4 ${getPartyColor(info.mla_party)}`}>
+                                <div className={`p-6 border-l-4 flex-1 overflow-y-auto ${getPartyColor(info.mla_party)} ${isMinimized ? 'hidden' : ''}`}>
                                     <div className="flex items-start gap-4">
                                         <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-100 shadow-sm shrink-0 bg-white flex items-center justify-center">
                                             <img src={getPartyLogoUrl(info.mla_party)} alt={info.mla_party} className="w-9 h-9 object-contain" />
@@ -581,7 +714,7 @@ export default function MapInterface({ isPreview = false }: MapInterfaceProps) {
                     </div>
 
                     {/* Ward Comparison Chart (slides in below the card) */}
-                    {showComparison && (
+                    {showComparison && !isMinimized && (
                         <div className="mt-3">
                             <WardComparisonChart
                                 data={wardStats}
